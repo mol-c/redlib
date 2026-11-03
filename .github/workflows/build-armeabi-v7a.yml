@@ -3,11 +3,11 @@ name: Build Redlib for armeabi-v7a
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Allows manual trigger from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build Android armeabi-v7a
+    name: Build Android armeabi-v7a (API 27)
     runs-on: ubuntu-latest
 
     steps:
@@ -26,14 +26,17 @@ jobs:
 
       - name: Build binary with cargo-ndk
         run: |
-          # Use the pre-installed Android NDK on the GitHub runner
-          export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_ROOT}"
+          # Use stable NDK r27 installed on the runner
+          export ANDROID_NDK_HOME="$ANDROID_NDK_ROOT"
           
-          # Build targeting Android API level 24 (Android 7.0+, compatible with Termux)
-          cargo ndk --target armv7-linux-androideabi --platform 24 build --release
+          # Fix "Unversioned target triples are not supported" in bindgen / btls-sys
+          export BINDGEN_EXTRA_CLANG_ARGS="--target=armv7a-linux-androideabi27 -D__ANDROID_API__=27"
+          
+          # Target API 27 (Android 8.1.0) with --bindgen enabled
+          cargo ndk --target armv7-linux-androideabi --platform 27 --bindgen build --release
 
       - name: Upload compiled binary
         uses: actions/upload-artifact@v4
         with:
-          name: redlib-armeabi-v7a
+          name: redlib-armeabi-v7a-android8.1
           path: target/armv7-linux-androideabi/release/redlib
