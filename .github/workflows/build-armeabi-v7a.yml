@@ -30,20 +30,20 @@ jobs:
           export ANDROID_NDK_HOME="$ANDROID_NDK_ROOT"
 
           # Fix "Unversioned target triples are not supported!"
-          # Clang automatically loads clang.cfg / clang++.cfg from its bin directory
           LLVM_BIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
           echo "-D__ANDROID_MIN_SDK_VERSION__=27" > "$LLVM_BIN/clang.cfg"
           echo "-D__ANDROID_MIN_SDK_VERSION__=27" > "$LLVM_BIN/clang++.cfg"
 
-          # Ensure bindgen picks up the versioned target and SDK definitions
+          # Target definitions for clang/bindgen
           export BINDGEN_EXTRA_CLANG_ARGS="--target=armv7a-linux-androideabi27 -D__ANDROID_MIN_SDK_VERSION__=27 -D__ANDROID_API__=27"
           export CFLAGS="--target=armv7a-linux-androideabi27 -D__ANDROID_MIN_SDK_VERSION__=27"
           export CXXFLAGS="--target=armv7a-linux-androideabi27 -D__ANDROID_MIN_SDK_VERSION__=27"
 
-          # Statically link libc++ so Termux does not fail with missing c++_shared library
+          # Statically link libc++ AND libc++abi so the binary is fully standalone
           export BORING_BSSL_RUST_CPPLIB="c++_static"
+          export RUSTFLAGS="-C link-arg=-lc++abi"
 
-          # Run cargo-ndk build targeting API 27 (Android 8.1.0)
+          # Build targeting API 27 (Android 8.1.0)
           cargo ndk --target armv7-linux-androideabi --platform 27 build --release
 
       - name: Upload compiled binary
